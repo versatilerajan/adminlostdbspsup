@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lost Items Admin Panel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .login-box {
+      max-width: 400px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 15px;
+    }
+    button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .delete-btn {
+      background: #dc3545;
+    }
+    .delete-btn:hover {
+      background: #c82333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      background: #007bff;
+      color: white;
+    }
+    .hidden {
+      display: none;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+      text-align: center;
+    }
+    .status-solved {
+      color: green;
+      font-weight: bold;
+    }
+    .status-pending {
+      color: orange;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<h1>Lost Items Admin Panel</h1>
+<div class="login-box" id="loginBox">
+  <select id="station">
+    <option value="">-- Select Police Station --</option>
+    <option value="ALL">ALL (Main Admin)</option>
+    <option value="MuffassilPoliceStation">Muffassil Police Station</option>
+    <option value="SiwanSadarTownPoliceStation">Siwan Sadar Town Police Station</option>
+    <option value="ZiradeiPoliceStation">Ziradei Police Station</option>
+    <option value="AsaonPoliceStation">Asaon Police Station</option>
+    <option value="BarhariyaPoliceStation">Barhariya Police Station</option>
+    <option value="ChainpurPoliceStation">Chainpur Police Station</option>
+    <option value="DhanautiOPPoliceStation">Dhanauti O.P. Police Station</option>
+    <option value="MHNagarHasanpuraPoliceStation">M.H. Nagar Hasanpura Police Station</option>
+    <option value="AandarPoliceStation">Aandar Police Station</option>
+    <option value="BhagwanpurHattPoliceStation">Bhagwanpur Hatt Police Station</option>
+    <option value="GBNagarPoliceStation">G.B. Nagar Police Station</option>
+    <option value="HussainganjPoliceStation">Hussainganj Police Station</option>
+    <option value="GoreyakothiPoliceStation">Goreyakothi Police Station</option>
+    <option value="MaharajganjPoliceStation">Maharajganj Police Station</option>
+    <option value="MairwaPoliceStation">Mairwa Police Station</option>
+    <option value="DaraundhaPoliceStation">Daraundha Police Station</option>
+    <option value="NautanPoliceStation">Nautan Police Station</option>
+    <option value="SaraiOPPoliceStation">Sarai O.P. Police Station</option>
+    <option value="SiswanPoliceStation">Siswan Police Station</option>
+    <option value="DarauliPoliceStation">Darauli Police Station</option>
+    <option value="MahadevaOPPoliceStation">Mahadeva O.P. Police Station</option>
+    <option value="RaghunathpurPoliceStation">Raghunathpur Police Station</option>
+    <option value="GuthaniPoliceStation">Guthani Police Station</option>
+    <option value="BasantpurPoliceStation">Basantpur Police Station</option>
+    <option value="PachrukhiPoliceStation">Pachrukhi Police Station</option>
+    <option value="SCSTThanaPoliceStation">SC-ST Thana Police Station</option>
+    <option value="MahilaThanaPoliceStation">Mahila Thana Police Station</option>
+    <option value="JamoBazarPoliceStation">Jamo Bazar Police Station</option>
+  </select>
+  <input type="text" id="adminId" placeholder="Admin ID" />
+  <input type="password" id="adminPass" placeholder="Admin Password" />
+  <button onclick="login()">Login</button>
+  <div class="error" id="error"></div>
+</div>
+<table id="dataTable" class="hidden">
+  <thead>
+    <tr>
+      <th>Police Station</th>
+      <th>Complainant Name</th>
+      <th>Phone</th>
+      <th>Address</th>
+      <th>Place of Loss</th>
+      <th>Incident DateTime</th>
+      <th>Category</th>
+      <th>IMEI Number</th>
+      <th>Photo</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+<script>
+  const API_BASE = "https://lostdbsupabasespxe3r.vercel.app/api";
+  let currentStation = "";
+
+  async function login() {
+    const station = document.getElementById("station").value;
+    const admin_id = document.getElementById("adminId").value;
+    const admin_password = document.getElementById("adminPass").value;
+    const errorBox = document.getElementById("error");
+    errorBox.textContent = "";
+    console.log("Login attempt:", { station, admin_id: admin_id ? "***" : "", hasPassword: !!admin_password });
+   
+    if (!station || !admin_id || !admin_password) {
+      errorBox.textContent = "All fields are required";
+      console.error("Login validation failed: Missing fields");
+      return;
+    }
+    try {
+      console.log("Sending login request to:", `${API_BASE}/admin/login`);
+      const res = await fetch(`${API_BASE}/admin/login`, {
+        method: "POST",
+        mode: 'cors',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ station, admin_id, admin_password })
+      });
+      console.log("Login response status:", res.status);
+      if (!res.ok) {
+        const errorData = await res.text();
+        console.error("Login error body:", errorData);
+        throw new Error(errorData || "Login failed");
+      }
+      const data = await res.json();
+      console.log("Login response data:", data);
+      console.log("Login successful, fetching complaints for:", station);
+      currentStation = station;
+      fetchComplaints(station);
+      document.getElementById("loginBox").classList.add("hidden");
+      document.getElementById("dataTable").classList.remove("hidden");
+    } catch (err) {
+      console.error("Login error:", err);
+      errorBox.textContent = `Login failed: ${err.message}`;
+    }
+  }
+
+  async function fetchComplaints(station) {
+    let url = `${API_BASE}/complaints`;
+    if (station !== "ALL") {
+      url += `?station=${encodeURIComponent(station)}`;
+    }
+    console.log("Fetching from URL:", url);
+    try {
+      const res = await fetch(url, { mode: 'cors' });
+      console.log("Fetch response status:", res.status);
+      if (!res.ok) {
+        throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
+      }
+      const data = await res.json();
+      console.log("Fetched data:", data);
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      if (!Array.isArray(data) || data.length === 0) {
+        console.warn("No data found");
+        document.getElementById("tableBody").innerHTML = '<tr><td colspan="11" style="text-align: center;">No complaints found.</td></tr>';
+        return;
+      }
+      console.log(`Rendering ${data.length} rows`);
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = "";
+      data.forEach((row, index) => {
+        console.log(`Row ${index}:`, row);
+        const statusClass = row.solved ? 'status-solved' : 'status-pending';
+        const statusText = row.solved ? 'Solved' : 'Pending';
+        const solveBtnDisabled = row.solved ? 'disabled' : '';
+        const imeiDisplay = row.imei_number || (row.category === 'phone' ? 'Missing' : '-');
+        const photoLink = row.photo_link ? `<a href="${row.photo_link}" target="_blank">View Photo</a>` : '-';
+        const incidentDt = row.incident_datetime ? new Date(row.incident_datetime).toLocaleString() : '-';
+        tbody.innerHTML += `
+          <tr>
+            <td>${row.police_station || ''}</td>
+            <td>${row.complainant_name || ''}</td>
+            <td>${row.complainant_phone || ''}</td>
+            <td>${row.complainant_address || ''}</td>
+            <td>${row.place_of_loss || ''}</td>
+            <td>${incidentDt}</td>
+            <td>${row.category || ''}</td>
+            <td>${imeiDisplay}</td>
+            <td>${photoLink}</td>
+            <td><span class="${statusClass}">${statusText}</span></td>
+            <td>
+              <button onclick="solveComplaint('${row.id}')" ${solveBtnDisabled}>Solve</button>
+              <button class="delete-btn" onclick="deleteComplaint('${row.id}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+      console.log("Table rendered successfully");
+    } catch (err) {
+      console.error('Fetch error:', err);
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: red;">Error loading data: ${err.message}</td></tr>`;
+    }
+  }
+
+  async function solveComplaint(id) {
+    if (!confirm('Mark this complaint as solved?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/complaints/${id}/solve`, { method: 'PATCH', mode: 'cors' });
+      if (!res.ok) {
+        throw new Error(await res.text() || 'Solve failed');
+      }
+      alert('Complaint marked as solved!');
+      fetchComplaints(currentStation);
+    } catch (err) {
+      console.error('Solve error:', err);
+      alert(`Error: ${err.message}`);
+    }
+  }
+
+  async function deleteComplaint(id) {
+    if (!confirm('Are you sure you want to delete this complaint?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/complaints/${id}`, { method: 'DELETE', mode: 'cors' });
+      if (!res.ok) {
+        throw new Error(await res.text() || 'Delete failed');
+      }
+      alert('Complaint deleted successfully!');
+      fetchComplaints(currentStation);
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert(`Error: ${err.message}`);
+    }
+  }
+</script>
+</body>
+</html>
